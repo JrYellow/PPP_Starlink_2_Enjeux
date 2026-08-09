@@ -1,0 +1,26 @@
+# Environnement virtuel
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Cache local des TLE (régénéré automatiquement, pas versionné)
+data/cache/
+
+# Streamlit
+.streamlit/
+
+# Éditeurs / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Fichiers de log
+*.log
