@@ -20,8 +20,8 @@ st.title("L'impact de Starlink, mesuré et cartographié")
 
 tab1, tab2, tab3 = st.tabs([
     "1. Environnement & Orbital",
-    "2. Stratégique / Réglementaire / Éco (à venir)",
-    "3. Cybersécurité (à venir)",
+    "2. Stratégique / Réglementaire / Éco",
+    "3. Cybersécurité"
 ])
 
 with tab1:
@@ -116,9 +116,137 @@ with tab1:
             st.info("Configurez les paramètres puis cliquez sur **Lancer la simulation**.")
 
 with tab2:
-    st.info("Module 2 (dashboard stratégique/réglementaire/économique) : "
-            "à implémenter au sprint suivant.")
+    st.header("Enjeux stratégiques, réglementaires et économiques")
+
+    from modules.regulatory import load_regulatory_matrix, filter_matrix
+    from modules.economic import (
+        load_operators_financials, load_starlink_pricing, filter_financials,
+    )
+    from modules.geopolitics import load_constellations, load_events, filter_events
+    import pandas as pd
+    from modules.visualization2 import (
+        regulatory_matrix_table, revenue_evolution_chart, cost_comparison_chart,
+        constellation_race_chart, constellation_budget_chart, geopolitical_timeline,
+        subscribers_growth_chart, kpi_summary,
+    )
+
+    reg_df = load_regulatory_matrix()
+    fin_df = load_operators_financials()
+    pricing_df = load_starlink_pricing()
+    const_df = load_constellations()
+    events_df = load_events()
+    subs_df = pd.read_csv("data/economic/starlink_subscribers.csv")
+    restricted_df = pd.read_csv("data/geopolitical/restricted_countries.csv")
+
+    # --- D9 : KPIs en tête de page ---
+    kpis = kpi_summary(subs_df, restricted_df)
+    kcol1, kcol2, kcol3 = st.columns(3)
+    kcol1.metric("Abonnés Starlink", f"{kpis['subscribers_millions']} M",
+                 help=f"Données {kpis['year']}")
+    kcol2.metric("Pays couverts", kpis["countries_covered"])
+    kcol3.metric("Pays restreints/interdits", kpis["countries_restricted"])
+
+    st.plotly_chart(subscribers_growth_chart(subs_df), use_container_width=True)
+
+    st.divider()
+
+    # --- D10 : Filtres interactifs (sidebar dédiée au module) ---
+    st.subheader("Filtres")
+    fcol1, fcol2, fcol3 = st.columns(3)
+    with fcol1:
+        selected_regulators = st.multiselect(
+            "Régulateur", options=sorted(reg_df["regulator"].unique()))
+    with fcol2:
+        year_range = st.slider(
+            "Plage d'années (données économiques/géopolitiques)",
+            min_value=int(fin_df["year"].min()), max_value=int(fin_df["year"].max()),
+            value=(int(fin_df["year"].min()), int(fin_df["year"].max())))
+    with fcol3:
+        selected_constellations = st.multiselect(
+            "Constellation", options=sorted(const_df["constellation"].unique()))
+
+    st.divider()
+
+    # --- D5 : Matrice réglementaire ---
+    st.subheader("Matrice réglementaire comparée")
+    filtered_reg = filter_matrix(reg_df, regulators=selected_regulators or None)
+    st.plotly_chart(regulatory_matrix_table(filtered_reg), use_container_width=True)
+
+    # --- D6 : Graphiques économiques ---
+    st.subheader("Impact économique")
+    filtered_fin = filter_financials(fin_df, year_min=year_range[0], year_max=year_range[1])
+    ecol1, ecol2 = st.columns(2)
+    with ecol1:
+        st.plotly_chart(revenue_evolution_chart(filtered_fin), use_container_width=True)
+    with ecol2:
+        st.plotly_chart(cost_comparison_chart(pricing_df), use_container_width=True)
+
+    # --- D7 : Course aux constellations ---
+    st.subheader("La course aux constellations")
+    filtered_const = (const_df[const_df["constellation"].isin(selected_constellations)]
+                       if selected_constellations else const_df)
+    ccol1, ccol2 = st.columns(2)
+    with ccol1:
+        st.plotly_chart(constellation_race_chart(filtered_const), use_container_width=True)
+    with ccol2:
+        st.plotly_chart(constellation_budget_chart(filtered_const), use_container_width=True)
+    st.dataframe(filtered_const, use_container_width=True)
+
+    # --- D8 : Frise géopolitique ---
+    st.subheader("Frise géopolitique : usages militaires et souveraineté")
+    filtered_events = filter_events(events_df, year_min=year_range[0], year_max=year_range[1])
+    st.plotly_chart(geopolitical_timeline(filtered_events), use_container_width=True)
+
+    with st.expander("Zones non desservies / restreintes (détail par pays)"):
+        st.dataframe(restricted_df, use_container_width=True)
+
 
 with tab3:
-    st.info("Module 3 (cybersécurité, arbre d'attaque, cas Viasat) : "
-            "à implémenter au sprint suivant.")
+    st.header("Cybersécurité des systèmes LEO")
+
+    from modules.threat_model import (
+        load_attack_tree, load_stride_matrix, get_viasat_path, filter_stride,
+    )
+    from modules.case_study import load_viasat_case_study, filter_case_study
+    from modules.visualization3 import attack_tree_diagram, stride_heatmap, viasat_timeline
+
+    tree_df = load_attack_tree()
+    stride_df = load_stride_matrix()
+    case_df = load_viasat_case_study()
+
+    st.subheader("Arbre d'attaque : systèmes LEO")
+    st.caption("Survolez un nœud pour voir sa description et sa mitigation. "
+               "La branche en rouge/gras est le chemin réellement emprunté lors "
+               "de l'incident Viasat KA-SAT (février 2022).")
+    st.plotly_chart(attack_tree_diagram(tree_df), use_container_width=True)
+
+    with st.expander("Détail du chemin d'attaque réel (cas Viasat)"):
+        viasat_path = get_viasat_path(tree_df)
+        for _, row in viasat_path.iterrows():
+            st.markdown(f"{'　' * row['depth']}**→ {row['label']}**  \n"
+                        f"{'　' * row['depth']}*{row['description']}*")
+
+    st.divider()
+
+    st.subheader("Matrice STRIDE")
+    scol1, scol2 = st.columns(2)
+    with scol1:
+        selected_components = st.multiselect(
+            "Composant", options=sorted(stride_df["component"].unique()))
+    with scol2:
+        selected_categories = st.multiselect(
+            "Catégorie STRIDE", options=sorted(stride_df["stride_category"].unique()))
+
+    filtered_stride = filter_stride(stride_df, components=selected_components or None,
+                                     categories=selected_categories or None)
+    st.plotly_chart(stride_heatmap(filtered_stride), use_container_width=True)
+    st.dataframe(filtered_stride, use_container_width=True)
+
+    st.divider()
+
+    st.subheader("Étude de cas : Viasat KA-SAT (février 2022)")
+    selected_phases = st.multiselect("Filtrer par phase", options=sorted(case_df["phase"].unique()))
+    filtered_case = filter_case_study(case_df, phases=selected_phases or None)
+    st.plotly_chart(viasat_timeline(filtered_case), use_container_width=True)
+    st.dataframe(filtered_case[["event_datetime", "phase", "event", "ttp_mitre"]],
+                 use_container_width=True)

@@ -1,0 +1,19 @@
+operator,year,revenue_musd,net_debt_musd,segment,source_url,date_maj
+SES,2019,2088,3650,GEO/MEO fixe et mobile,https://www.ses.com/investors,2026-08-13
+SES,2021,1961,3550,GEO/MEO fixe et mobile,https://www.ses.com/investors,2026-08-13
+SES,2023,1848,3300,GEO/MEO fixe et mobile,https://www.ses.com/investors,2026-08-13
+SES,2025,1790,3200,GEO/MEO fixe et mobile,https://www.ses.com/investors,2026-08-13
+Intelsat,2019,2069,14700,GEO fixe,https://www.intelsat.com/investor-relations,2026-08-13
+Intelsat,2021,1806,15100,GEO fixe (post-restructuration Chapitre 11),https://www.intelsat.com/investor-relations,2026-08-13
+Intelsat,2023,1650,7000,GEO fixe (post-restructuration),https://www.intelsat.com/investor-relations,2026-08-13
+Eutelsat,2019,1414,2400,GEO fixe,https://www.eutelsat.com/en/investors.html,2026-08-13
+Eutelsat,2021,1183,2350,GEO fixe,https://www.eutelsat.com/en/investors.html,2026-08-13
+Eutelsat,2023,1163,2600,GEO fixe + LEO (fusion OneWeb),https://www.eutelsat.com/en/investors.html,2026-08-13
+Eutelsat,2025,1200,3000,GEO fixe + LEO (OneWeb),https://www.eutelsat.com/en/investors.html,2026-08-13
+Viasat,2019,1670,2200,GEO fixe + mobilité,https://www.viasat.com/about/investor-relations/,2026-08-13
+Viasat,2022,2731,6800,GEO fixe + mobilité (post-acquisition Inmarsat),https://www.viasat.com/about/investor-relations/,2026-08-13
+Viasat,2025,4500,6200,GEO fixe + mobilité,https://www.viasat.com/about/investor-relations/,2026-08-13
+SpaceX Starlink,2021,250,,LEO grand public + gouvernemental (estimation analystes),https://payloadspace.com/estimating-spacexs-2024-revenue/,2026-08-13
+SpaceX Starlink,2023,4200,,LEO grand public + gouvernemental (estimation analystes),https://payloadspace.com/estimating-spacexs-2024-revenue/,2026-08-13
+SpaceX Starlink,2024,7700,,LEO grand public + gouvernemental (estimation analystes),https://spacenews.com/starlink-set-to-hit-11-8-billion-revenue-in-2025-boosted-by-military-contracts/,2026-08-13
+SpaceX Starlink,2025,11400,,LEO grand public + gouvernemental (chiffre issu du prospectus IPO SpaceX),https://sacra.com/c/spacex/,2026-08-13

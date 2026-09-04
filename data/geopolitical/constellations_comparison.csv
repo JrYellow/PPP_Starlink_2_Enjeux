@@ -1,0 +1,5 @@
+constellation,operator,country_bloc,satellites_active,satellites_planned,altitude_km,frequency_bands,budget_musd,target_service_date,source_url,date_maj
+Starlink,SpaceX,États-Unis (privé),9213,42000,"340-550 (multi-shells)","Ku, Ka, E-band (v3)",,En service (2020-),https://en.wikipedia.org/wiki/Starlink,2026-08-13
+OneWeb (Eutelsat OneWeb),Eutelsat Group,"Union Européenne / Royaume-Uni (privé, ex-institutionnel)",648,648,1200,"Ku, Ka",3500,En service (2023-),https://www.eutelsat.com,2026-08-13
+IRIS²,Consortium SpaceRISE / Commission Européenne / ESA,Union Européenne (institutionnel souverain),0,290,"8000 (MEO 18 sats) + 1200 (LEO 264 sats)","Ku, Ka",10600,2030-2031 (retardé),https://www.spacerise.eu/,2026-08-13
+Guowang,China SatNet,Chine (institutionnel/national),190,13000,500-1145,"Ku, Ka",,2027 (jalon intermédiaire 400 sats),https://spacenews.com,2026-08-13

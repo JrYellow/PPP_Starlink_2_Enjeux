@@ -8,9 +8,12 @@ Starlink : environnement/orbital (calcul), stratégique/réglementaire/économiq
 
 ## Statut du développement
 
-- **Module 1 — Environnement & Orbital** (Sprint 1, ce dépôt)
-- Module 2 — Stratégique / Réglementaire / Économique (sprint suivant)
-- Module 3 — Cybersécurité (sprint suivant)
+- **Module 1 — Environnement & Orbital** (Sprint 1)
+- **Module 2 — Stratégique / Réglementaire / Économique** (Sprint 2)
+- **Module 3 — Cybersécurité** (Sprint 3)
+
+Les 3 modules du cahier des charges sont implémentés et intégrés dans une
+application Streamlit unique (`app.py`, 3 onglets).
 
 ## Installation
 
@@ -33,18 +36,42 @@ starlink-impact/
 ├── app.py                  # Point d'entrée Streamlit (3 onglets)
 ├── requirements.txt
 ├── modules/
-│   ├── tle_fetcher.py      # Récupération + cache des TLE (CelesTrak)
-│   ├── orbital.py          # Propagation SGP4 (position satellites)
-│   ├── solar.py            # Position solaire approchée (sans dépendance externe)
-│   ├── visibility.py       # Simulateur de traînées (crépuscule, magnitude)
-│   ├── conjunctions.py     # Densité débris par altitude + conjonctions
-│   └── visualization.py    # Graphiques Plotly (carte, histogramme, alertes)
+│   ├── tle_fetcher.py       # Récupération + cache des TLE (CelesTrak)
+│   ├── orbital.py           # Propagation SGP4 (position satellites)
+│   ├── solar.py             # Position solaire approchée (sans dépendance externe)
+│   ├── visibility.py        # Simulateur de traînées (crépuscule, magnitude)
+│   ├── conjunctions.py      # Densité débris par altitude + conjonctions (vectorisé)
+│   ├── visualization.py     # Graphiques Module 1 (carte, histogramme, alertes)
+│   ├── regulatory.py        # Chargement/validation matrice réglementaire
+│   ├── economic.py          # Chargement/validation données économiques
+│   ├── geopolitics.py       # Chargement/validation constellations + événements
+│   ├── visualization2.py    # Graphiques Module 2 (matrice, éco, course, frise, KPIs)
+│   ├── threat_model.py      # Chargement/validation arbre d'attaque + STRIDE
+│   ├── case_study.py        # Chargement/validation chronologie Viasat KA-SAT
+│   └── visualization3.py    # Graphiques Module 3 (arbre, heatmap STRIDE, frise)
 ├── data/
-│   ├── cache/               # Cache local des TLE téléchargés (auto-généré)
-│   └── samples/
-│       └── test_fixtures.tle  # TLE synthétiques pour tests hors-ligne
+│   ├── cache/                # Cache local des TLE téléchargés (auto-généré)
+│   ├── samples/
+│   │   └── test_fixtures.tle # TLE synthétiques pour tests hors-ligne
+│   ├── regulatory/
+│   │   └── regulatory_matrix.csv
+│   ├── economic/
+│   │   ├── operators_financials.csv
+│   │   ├── starlink_pricing.csv
+│   │   ├── starlink_subscribers.csv
+│   │   └── NOTES.md           # Traçabilité/fiabilité des données économiques
+│   ├── geopolitical/
+│   │   ├── constellations_comparison.csv
+│   │   ├── military_soft_power_events.csv
+│   │   └── restricted_countries.csv
+│   └── cyber/
+│       ├── attack_tree.csv      # Arbre d'attaque (19 nœuds, branche Viasat)
+│       ├── stride_matrix.csv    # Matrice STRIDE (18 entrées)
+│       └── viasat_case_study.csv # Chronologie incident Viasat (9 événements, TTP MITRE)
 ├── tests/
-│   └── test_orbital.py      # Suite de validation (11 tests, cas Mauna Kea)
+│   ├── test_orbital.py      # Module 1 : 11 tests (cas Mauna Kea)
+│   ├── test_module2.py      # Module 2 : 13 tests
+│   └── test_module3.py      # Module 3 : 16 tests
 ├── assets/
 └── docs/                     # Documentation académique (PDF, diagrammes)
 ```
@@ -71,14 +98,47 @@ starlink-impact/
    pour un coût de calcul réaliste sur un poste local
 4. Seuils de risque indicatifs : < 1 km (élevé), 1-5 km (modéré)
 
+## Méthodologie Module 2 (Stratégique/Réglementaire/Économique)
+
+Données figées en CSV versionnés (pas d'API live, contrairement aux TLE) :
+réglementaire (UIT/FCC/ARCEP/ARTP/OFCOM), économique (revenus opérateurs,
+tarification Starlink, croissance abonnés), géopolitique (comparatif des 4
+méga-constellations, chronologie des usages militaires/souveraineté).
+Chaque ligne porte une colonne `source_url` et `date_maj`. Voir
+`data/economic/NOTES.md` pour le niveau de fiabilité de chaque jeu de données
+(certains chiffres d'opérateurs GEO restent des ordres de grandeur à recouper
+avec leurs rapports annuels officiels avant la soutenance).
+
+## Méthodologie Module 3 (Cybersécurité)
+
+- **Arbre d'attaque** (`data/cyber/attack_tree.csv`) : modèle générique
+  couvrant les 4 segments d'un système LEO (sol/gestion, liaison RF, spatial,
+  utilisateur), avec la branche réellement empruntée lors de l'incident
+  Viasat KA-SAT identifiée (colonne `viasat_case`). Intégrité validée
+  automatiquement : racine unique, pas de cycle, pas de `parent_id` orphelin.
+- **Matrice STRIDE** (`data/cyber/stride_matrix.csv`) : 6 catégories
+  (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of
+  Service, Elevation of Privilege) croisées avec les composants système,
+  référencées aux nœuds de l'arbre d'attaque.
+- **Étude de cas Viasat KA-SAT** (`data/cyber/viasat_case_study.csv`) :
+  chronologie de l'incident de février 2022 (accès initial via VPN mal
+  configuré → pivot vers le réseau de gestion → déploiement du wiper
+  AcidRain), avec TTP MITRE ATT&CK et sources CISA/SentinelOne.
+
 ## Sources de données
 
 - TLE : [CelesTrak](https://celestrak.org/NORAD/elements/) (gratuit, mise à jour
-  régulière). Mi-2026, CelesTrak est passé aux catalogues à 6 chiffres pour les
+  régulière). ! Mi-2026, CelesTrak est passé aux catalogues à 6 chiffres pour les
   nouveaux objets ; le format TLE classique (5 chiffres) reste valide pour Starlink.
+  ! CelesTrak limite les groupes `active`/`starlink` à un téléchargement par
+  cycle de 2h (HTTP 403 sinon) — utilisez `python -m modules.tle_fetcher
+  --register-file <fichier> --group starlink` pour précharger le cache avant
+  une démo, sans dépendre du réseau au moment critique.
 - Référence magnitude : Hainaut & Williams (2020), *A&A*, impact des
   constellations sur les observations astronomiques ESO.
 - Rapport IAU "Dark and Quiet Skies".
+- Cybersécurité : CISA/FBI AA22-076, analyses SentinelOne (AcidRain/AcidPour),
+  rapport d'intervention Viasat, MITRE ATT&CK.
 
 ## Tests
 
@@ -86,9 +146,10 @@ starlink-impact/
 pytest tests/ -v
 ```
 
-11 tests de validation couvrant : géométrie solaire (cas connus Mauna Kea),
-propagation SGP4, détection de traînées, densité de débris, détection de
-conjonctions.
+**40 tests** couvrant les 3 modules : géométrie solaire, propagation SGP4,
+traînées, débris/conjonctions (Module 1) ; réglementaire, économique,
+géopolitique (Module 2) ; arbre d'attaque, STRIDE, étude de cas Viasat
+(Module 3).
 
 ## Note sur les données d'exemple
 
@@ -97,12 +158,7 @@ valide, mais pas de vrais satellites) utilisés pour les tests automatisés et
 la démo hors-ligne. Pour une analyse réelle, décochez l'option "données
 d'exemple" dans l'application (nécessite un accès internet à CelesTrak).
 
-## Groupe en charge du projet — EC2LT
+## Groupe 2 — EC2LT
 
--- Exode NGAMENEDE-OMOYEN
--- Tchedre TCHAPO
--- Junior ATIPO
--- Francky Fara MENDY 
--- Dieu Merci Geoffroy Wesley NAM YONA
--- Dieynaba BA
--- Taoufiki HAIROUNISSAOU
+Junior ATIPO · Exode NGAMENEDE-OMOYEN · Tchedre TCHAPO · Francky Fara MENDY · Dieu Merci
+Geoffroy Wesley NAM YONA · Dieynaba BA · Taoufiki HAIROUNISSAOU

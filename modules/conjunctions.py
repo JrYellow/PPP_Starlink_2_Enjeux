@@ -1,6 +1,4 @@
 """
-conjunctions.py
-===============
 Comptage de conjonctions (alertes si distance < seuil) et densité de débris
 par tranche d'altitude.
 

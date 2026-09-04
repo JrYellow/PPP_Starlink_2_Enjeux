@@ -1,0 +1,19 @@
+component,stride_category,threat_description,severity,related_attack_node,source_url,date_maj
+Segment sol / NOC,Spoofing,Usurpation d'identité d'un opérateur légitime pour accéder aux systèmes de gestion.,Élevée,N1b,,2026-08-13
+Segment sol / NOC,Tampering,Altération non autorisée des configurations ou des firmwares déployés aux terminaux.,Critique,N1e,https://www.cisa.gov,2026-08-13
+Segment sol / NOC,Repudiation,Absence de traçabilité suffisante des actions d'administration sur le réseau de gestion.,Moyenne,N1d,,2026-08-13
+Segment sol / NOC,Information Disclosure,Exposition de données de configuration réseau via une appliance VPN mal sécurisée.,Élevée,N1a,https://www.cisa.gov,2026-08-13
+Segment sol / NOC,Denial of Service,Saturation ou mise hors service des systèmes de gestion centraux.,Élevée,N1c,,2026-08-13
+Segment sol / NOC,Elevation of Privilege,Pivot d'un accès utilisateur standard vers un accès administrateur sur le réseau de gestion.,Critique,N1d,https://www.cisa.gov,2026-08-13
+Liaison RF (montante/descendante),Spoofing,Usurpation du signal satellite légitime (spoofing GNSS/RF).,Moyenne,N2b,,2026-08-13
+Liaison RF (montante/descendante),Tampering,Injection de données falsifiées dans le flux de communication.,Moyenne,N2b,,2026-08-13
+Liaison RF (montante/descendante),Information Disclosure,Interception passive du trafic non chiffré sur la liaison.,Moyenne,N2c,,2026-08-13
+Liaison RF (montante/descendante),Denial of Service,Brouillage intentionnel (jamming) du signal.,Élevée,N2a,,2026-08-13
+Segment spatial (satellite),Tampering,Modification non autorisée du firmware embarqué du satellite.,Critique,N3b,,2026-08-13
+Segment spatial (satellite),Elevation of Privilege,Prise de contrôle des fonctions de commande du bus satellite.,Critique,N3a,,2026-08-13
+Segment spatial (satellite),Denial of Service,Mise hors service d'une charge utile ou d'un sous-système satellite.,Élevée,N3a,,2026-08-13
+Segment utilisateur / terminal,Spoofing,Usurpation d'un terminal légitime auprès du réseau (clonage d'identifiants).,Moyenne,N4b,,2026-08-13
+Segment utilisateur / terminal,Tampering,Modification du firmware du terminal par injection de faute matérielle.,Élevée,N4a,https://www.blackhat.com,2026-08-13
+Segment utilisateur / terminal,Information Disclosure,Extraction de clés cryptographiques depuis un terminal volé.,Moyenne,N4b,,2026-08-13
+Segment utilisateur / terminal,Denial of Service,Rendre un terminal inopérant via un wiper déployé en masse (cas AcidRain).,Critique,N1f,https://www.cisa.gov,2026-08-13
+Segment utilisateur / terminal,Elevation of Privilege,Compromission d'un équipement réseau client pour rebondir vers le réseau interne.,Moyenne,N4c,,2026-08-13

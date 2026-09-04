@@ -1,0 +1,8 @@
+offer,country_zone,hardware_price_usd,subscription_price_usd_month,advertised_speed_mbps,source_url,date_maj
+Résidentiel Standard,États-Unis,349,120,"25-220 Mbps",https://www.starlink.com/us/residential,2026-08-13
+Résidentiel Standard,France,349,49,"25-220 Mbps",https://www.starlink.com/fr/residential,2026-08-13
+Résidentiel Standard,Sénégal,439,45,"25-220 Mbps",https://www.starlink.com/sn/residential,2026-08-13
+Roam (mobilité),États-Unis,599,165,"25-220 Mbps",https://www.starlink.com/us/roam,2026-08-13
+Maritime,International,10000,2500,"jusqu'à 220 Mbps",https://www.starlink.com/business/maritime,2026-08-13
+Aviation,International,,12500,"jusqu'à 220 Mbps",https://www.starlink.com/business/aviation,2026-08-13
+VSAT classique (référence comparative),Afrique subsaharienne,1500,300,"1-10 Mbps",https://www.itu.int,2026-08-13

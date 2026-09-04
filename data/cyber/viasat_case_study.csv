@@ -1,0 +1,10 @@
+event_datetime,phase,event,ttp_mitre,source_url,date_maj
+2022-02-24,Contexte,Début de l'invasion russe de l'Ukraine.,,https://www.cisa.gov,2026-08-13
+2022-02-24,Accès initial,"Exploitation d'une appliance VPN mal configurée pour obtenir un accès distant au segment de gestion du réseau KA-SAT.",T1133 - External Remote Services,https://www.cisa.gov,2026-08-13
+2022-02-24,Découverte / Mouvement latéral,"Pivot vers le segment de gestion 'de confiance' du réseau, permettant de contrôler à distance un grand nombre de modems clients.",T1210 - Exploitation of Remote Services,https://www.cisa.gov,2026-08-13
+2022-02-24,Impact,"Déploiement du malware wiper AcidRain sur les modems clients via le canal de gestion légitime, sous couvert d'une mise à jour.",T1485 - Data Destruction,https://www.sentinelone.com,2026-08-13
+2022-02-24,Impact,"Des dizaines de milliers de terminaux mis hors service en Ukraine (dont des communications militaires/gouvernementales) et en Europe (ex. plusieurs milliers d'éoliennes allemandes affectées indirectement).",,https://www.cisa.gov,2026-08-13
+2022-03-30,Attribution,"SentinelOne publie l'analyse technique du malware AcidRain, le qualifiant de septième famille de wiper liée au conflit ukrainien.",,https://www.sentinelone.com,2026-08-13
+2022-05-10,Communication officielle,"Viasat publie son rapport d'intervention détaillant la chaîne d'attaque (VPN mal configuré -> segment de gestion -> wiper).",,https://www.cisa.gov,2026-08-13
+2022-05-10,Réponse gouvernementale,"CISA et le FBI publient l'avis conjoint AA22-076 recommandant le renforcement de la cybersécurité des fournisseurs SATCOM.",,https://www.cisa.gov,2026-08-13
+2024-03-01,Suivi,"Découverte d'une variante du wiper, baptisée AcidPour, réutilisant des techniques similaires.",T1485 - Data Destruction,https://www.sentinelone.com,2026-08-13
