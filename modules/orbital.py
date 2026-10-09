@@ -70,6 +70,17 @@ class OrbitalPropagator:
             EarthSatellite(r.line1, r.line2, r.name, _TS) for r in tle_records
         ]
 
+    @property
+    def satrecs(self):
+        """
+        Objets sgp4 bas niveau, utilisés par modules/conjunctions.py pour la
+        propagation vectorisée (SatrecArray). Calculé à la demande (plutôt que
+        figé à l'initialisation) pour rester cohérent même si .satellites est
+        filtré ou tronqué après la création du propagateur (ex. limitation du
+        nombre de satellites dans l'interface Streamlit).
+        """
+        return [sat.model for sat in self.satellites]
+
     def position_at(self, satellite: EarthSatellite, when: datetime) -> SatellitePosition:
         """Calcule la position d'un satellite à un instant UTC donné."""
         if when.tzinfo is None:

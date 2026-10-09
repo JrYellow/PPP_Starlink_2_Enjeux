@@ -9,7 +9,7 @@ import streamlit as st
 
 from modules.tle_fetcher import TLEFetcher
 from modules.orbital import OrbitalPropagator
-from modules.visibility import KNOWN_OBSERVATORIES, simulate_trails
+from modules.visibility import KNOWN_OBSERVATORIES, simulate_trails, custom_observatory
 from modules.conjunctions import altitude_density_by_shell, detect_conjunctions
 from modules.visualization import (
     trails_polar_chart, debris_density_histogram, conjunction_alert_table,
@@ -39,30 +39,46 @@ with tab1:
             "internet ou premier test)", value=True,
         )
 
-        obs_key = st.selectbox("Observatoire", list(KNOWN_OBSERVATORIES.keys()),
-                                format_func=lambda k: KNOWN_OBSERVATORIES[k].name)
-        observatory = KNOWN_OBSERVATORIES[obs_key]
+        site_mode = st.radio("Site d'observation", ["Observatoire de référence", "Site personnalisé"],
+                              horizontal=True)
+
+        if site_mode == "Observatoire de référence":
+            obs_key = st.selectbox("Observatoire", list(KNOWN_OBSERVATORIES.keys()),
+                                    format_func=lambda k: KNOWN_OBSERVATORIES[k].name,
+                                    index=list(KNOWN_OBSERVATORIES.keys()).index("dakar"))
+            observatory = KNOWN_OBSERVATORIES[obs_key]
+        else:
+            st.caption("Saisissez les coordonnées de votre propre site d'observation.")
+            custom_name = st.text_input("Nom du site", value="Mon site")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                custom_lat = st.number_input("Latitude (°)", min_value=-90.0, max_value=90.0,
+                                              value=14.6928, format="%.4f")
+            with c2:
+                custom_lon = st.number_input("Longitude (°)", min_value=-180.0, max_value=180.0,
+                                              value=-17.4467, format="%.4f")
+            with c3:
+                custom_alt = st.number_input("Altitude (m)", min_value=0.0, max_value=9000.0,
+                                              value=24.0, format="%.0f")
+            observatory = custom_observatory(custom_name, custom_lat, custom_lon, custom_alt)
 
         date = st.date_input("Date (UTC)", value=datetime(2026, 8, 3))  # Date mise à jour par défaut pour aujourd'hui
         start_hour = st.slider("Heure de début (UTC)", 0, 23, 17)       # Crépuscule pour Brazzaville par défaut
         window_hours = st.slider("Fenêtre d'analyse (heures)", 1, 12, 2)
 
         st.markdown("---")
-        st.caption("Optimisation de la vitesse :")
-        
-        # NOUVEAU : Curseur pour limiter le nombre de satellites
-        max_sats = st.slider(
-            "Nombre max de satellites (pour test rapide)", 
-            min_value=50, max_value=1000, value=200, step=50
-        )
-        
-        # NOUVEAU : Curseur pour le pas de temps
         step_seconds = st.slider(
-            "Pas de temps (secondes)", 
-            min_value=15, max_value=300, value=30, step=15
+            "Pas de temps (secondes)",
+            min_value=15, max_value=300, value=30, step=15,
         )
-        
-        st.caption(f"*Calcul ≈ {int(window_hours * 3600 / step_seconds)} itérations. Réduisez le pas et le nombre pour aller plus vite.*")
+        st.caption(
+            f"≈ {int(window_hours * 3600 / step_seconds)} pas de temps. Grâce à la "
+            "propagation vectorisée (SatrecArray) et à la recherche de voisins par "
+            "arbre KD (cKDTree), le catalogue complet (plusieurs milliers de "
+            "satellites) est traité en moins d'une seconde pour la détection de "
+            "conjonctions -- aucune limitation du nombre de satellites n'est "
+            "nécessaire."
+        )
 
         run = st.button("Lancer la simulation", type="primary")
 
@@ -86,11 +102,8 @@ with tab1:
                     st.stop()
 
             propagator = OrbitalPropagator(records)
-
-            # NOUVEAU : Application de la limite max de satellites pour le test rapide
-            if len(propagator.satellites) > max_sats:
-                propagator.satellites = propagator.satellites[:max_sats]
-                st.info(f"Simulation limitée à {max_sats} satellites pour accélérer le calcul. (Total disponible : {len(records)})")
+            st.caption(f"{len(propagator.satellites)} satellites chargés (catalogue complet, "
+                       "aucune troncature appliquée).")
 
             start = datetime(date.year, date.month, date.day, start_hour, 0, 0,
                               tzinfo=timezone.utc)
@@ -205,14 +218,27 @@ with tab3:
     st.header("Cybersécurité des systèmes LEO")
 
     from modules.threat_model import (
-        load_attack_tree, load_stride_matrix, get_viasat_path, filter_stride,
+        load_attack_tree, load_stride_matrix, load_sparta_mapping,
+        get_viasat_path, filter_stride,
     )
     from modules.case_study import load_viasat_case_study, filter_case_study
-    from modules.visualization3 import attack_tree_diagram, stride_heatmap, viasat_timeline
+    from modules.visualization3 import (
+        attack_tree_diagram, stride_heatmap, viasat_timeline,
+        sparta_risk_matrix, sparta_tactics_bar,
+    )
 
     tree_df = load_attack_tree()
     stride_df = load_stride_matrix()
+    sparta_df = load_sparta_mapping()
     case_df = load_viasat_case_study()
+
+    st.caption(
+        "Modélisation croisée : arbre d'attaque (chemins concrets), matrice "
+        "STRIDE (couverture systématique par catégorie de menace, Microsoft) "
+        "et référentiel **SPARTA** (Space Attack Research and Tactic Analysis, "
+        "Aerospace Corporation) — l'équivalent de MITRE ATT&CK spécifique aux "
+        "systèmes spatiaux, avec score de risque probabilité × impact."
+    )
 
     st.subheader("Arbre d'attaque : systèmes LEO")
     st.caption("Survolez un nœud pour voir sa description et sa mitigation. "
@@ -241,6 +267,34 @@ with tab3:
                                      categories=selected_categories or None)
     st.plotly_chart(stride_heatmap(filtered_stride), use_container_width=True)
     st.dataframe(filtered_stride, use_container_width=True)
+
+    st.divider()
+
+    st.subheader("Référentiel SPARTA : tactiques et score de risque")
+    st.caption(
+        "Chaque vecteur d'attaque de l'arbre est noté selon une probabilité "
+        "et un impact (1 à 5), pour un score de risque (NRS) de 1 à 25 : "
+        "Faible (1-4), Modéré (5-9), Élevé (10-14), Critique (15-25). Les "
+        "contrôles NIST SP 800-53 recommandés sont listés dans le tableau."
+    )
+    rcol1, rcol2 = st.columns(2)
+    with rcol1:
+        st.plotly_chart(sparta_risk_matrix(sparta_df, tree_df), use_container_width=True)
+    with rcol2:
+        st.plotly_chart(sparta_tactics_bar(sparta_df), use_container_width=True)
+
+    sparta_display = sparta_df.merge(tree_df[["node_id", "label"]], on="node_id")
+    st.dataframe(
+        sparta_display[["label", "sparta_tactic_name", "likelihood", "impact",
+                         "nrs_score", "risk_level", "nist_800_53_control"]]
+        .rename(columns={
+            "label": "Vecteur d'attaque", "sparta_tactic_name": "Tactique SPARTA",
+            "likelihood": "Probabilité", "impact": "Impact", "nrs_score": "Score NRS",
+            "risk_level": "Niveau de risque", "nist_800_53_control": "Contrôles NIST SP 800-53",
+        })
+        .sort_values("Score NRS", ascending=False),
+        use_container_width=True,
+    )
 
     st.divider()
 

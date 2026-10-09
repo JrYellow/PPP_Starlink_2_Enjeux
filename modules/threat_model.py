@@ -11,6 +11,38 @@ import pandas as pd
 
 ATTACK_TREE_PATH = Path(__file__).resolve().parent.parent / "data" / "cyber" / "attack_tree.csv"
 STRIDE_PATH = Path(__file__).resolve().parent.parent / "data" / "cyber" / "stride_matrix.csv"
+SPARTA_PATH = Path(__file__).resolve().parent.parent / "data" / "cyber" / "sparta_mapping.csv"
+
+# Les 9 tactiques officielles du référentiel SPARTA (Space Attack Research and
+# Tactic Analysis), développé par l'Aerospace Corporation -- l'équivalent de
+# MITRE ATT&CK spécifique aux systèmes spatiaux. Référence : sparta.aerospace.org
+SPARTA_TACTICS = {
+    "ST0001": "Reconnaissance", "ST0002": "Resource Development",
+    "ST0003": "Initial Access", "ST0004": "Execution", "ST0005": "Persistence",
+    "ST0006": "Defense Evasion", "ST0007": "Lateral Movement",
+    "ST0008": "Exfiltration", "ST0009": "Impact",
+}
+
+# Catégorisation du score de risque NRS (Notional Risk Score = probabilité x
+# impact, chacun noté de 1 à 5, donc un score de 1 à 25), suivant la logique
+# de matrice de risque 5x5 utilisée par SPARTA.
+def nrs_risk_level(score: int) -> str:
+    """
+    Catégorisation standard d'une matrice de risque 5x5 (probabilité x impact,
+    chacun 1-5, score total 1-25) : Faible (1-4), Modéré (5-9), Élevé (10-14),
+    Critique (15-25). Cette grille correspond à l'usage courant en analyse de
+    risque cyber (ex. méthodologie NIST SP 800-30) et place logiquement les
+    scénarios à fort impact même à faible probabilité (ex. sabotage du bus
+    satellite, impact=5/probabilité=1 -> NRS=5, "Modéré") en-dessous des
+    scénarios combinant impact élevé ET probabilité significative.
+    """
+    if score >= 15:
+        return "Critique"
+    if score >= 10:
+        return "Élevé"
+    if score >= 5:
+        return "Modéré"
+    return "Faible"
 
 
 def load_attack_tree(path: Path = ATTACK_TREE_PATH) -> pd.DataFrame:
@@ -60,6 +92,42 @@ def load_stride_matrix(path: Path = STRIDE_PATH) -> pd.DataFrame:
     if invalid_refs:
         raise ValueError(f"related_attack_node référençant des nœuds inexistants : {invalid_refs}")
 
+    return df
+
+
+def load_sparta_mapping(path: Path = SPARTA_PATH) -> pd.DataFrame:
+    """
+    Charge le mapping SPARTA (tactiques/techniques spécifiques au spatial,
+    scores de risque NRS, contrôles NIST SP 800-53) et vérifie sa cohérence
+    avec l'arbre d'attaque.
+    """
+    df = pd.read_csv(path)
+
+    required = {"node_id", "sparta_tactic_id", "sparta_tactic_name",
+                "likelihood", "impact", "nrs_score"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"Colonnes manquantes dans {path.name} : {missing}")
+
+    tree = load_attack_tree()
+    valid_nodes = set(tree["node_id"])
+    invalid_refs = set(df["node_id"]) - valid_nodes
+    if invalid_refs:
+        raise ValueError(f"node_id référençant des nœuds inexistants : {invalid_refs}")
+
+    invalid_tactics = set(df["sparta_tactic_id"]) - set(SPARTA_TACTICS.keys())
+    if invalid_tactics:
+        raise ValueError(f"Tactiques SPARTA invalides : {invalid_tactics}")
+
+    if not df["likelihood"].between(1, 5).all() or not df["impact"].between(1, 5).all():
+        raise ValueError("likelihood et impact doivent être compris entre 1 et 5")
+
+    computed = df["likelihood"] * df["impact"]
+    if not (computed == df["nrs_score"]).all():
+        bad = df.loc[computed != df["nrs_score"], "node_id"].tolist()
+        raise ValueError(f"nrs_score incohérent avec likelihood x impact pour : {bad}")
+
+    df["risk_level"] = df["nrs_score"].apply(nrs_risk_level)
     return df
 
 
@@ -117,8 +185,18 @@ def filter_stride(df: pd.DataFrame, components: Optional[List[str]] = None,
 if __name__ == "__main__":
     tree = load_attack_tree()
     stride = load_stride_matrix()
+    sparta = load_sparta_mapping()
     print(f"{len(tree)} nœuds dans l'arbre d'attaque, racine = {get_root_id(tree)}")
     print(f"{len(stride)} entrées STRIDE")
+    print(f"{len(sparta)} entrées SPARTA, tactiques utilisées : "
+          f"{sorted(sparta['sparta_tactic_id'].unique())}")
     print("\n--- Chemin d'attaque réel (cas Viasat) ---")
     for _, row in get_viasat_path(tree).iterrows():
         print(f"  {'  ' * row['depth']}└─ {row['label']}")
+    print("\n--- Nœuds à risque Critique/Élevé (NRS) ---")
+    high_risk = sparta[sparta["risk_level"].isin(["Critique", "Élevé"])].sort_values(
+        "nrs_score", ascending=False)
+    for _, row in high_risk.iterrows():
+        node_label = tree.loc[tree["node_id"] == row["node_id"], "label"].iloc[0]
+        print(f"  [{row['risk_level']}] {node_label} (NRS={row['nrs_score']}, "
+              f"{row['sparta_tactic_name']})")

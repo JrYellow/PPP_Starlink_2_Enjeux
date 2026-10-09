@@ -170,3 +170,70 @@ def viasat_timeline(case_df: pd.DataFrame) -> go.Figure:
         xaxis_title="Date", height=300,
     )
     return fig
+
+
+# --- SPARTA : matrice de risque 5x5 (probabilité x impact) -----------------
+
+def sparta_risk_matrix(sparta_df: pd.DataFrame, tree_df: pd.DataFrame) -> go.Figure:
+    """
+    Matrice de risque 5x5 (probabilité en abscisse, impact en ordonnée),
+    façon NRS (Notional Risk Score) de SPARTA. Chaque cellule affiche le
+    nombre de nœuds de l'arbre d'attaque tombant dans cette combinaison.
+    """
+    merged = sparta_df.merge(tree_df[["node_id", "label"]], on="node_id")
+
+    grid = pd.DataFrame(0, index=range(1, 6), columns=range(1, 6))
+    labels_grid = {(l, i): [] for l in range(1, 6) for i in range(1, 6)}
+    for _, row in merged.iterrows():
+        grid.loc[row["impact"], row["likelihood"]] += 1
+        labels_grid[(row["impact"], row["likelihood"])].append(row["label"])
+
+    text = [[("<br>".join(labels_grid[(impact, lik)]) if labels_grid[(impact, lik)] else "")
+             for lik in range(1, 6)] for impact in range(1, 6)]
+
+    fig = go.Figure(data=go.Heatmap(
+        z=grid.values, x=list(range(1, 6)), y=list(range(1, 6)),
+        text=text, hovertemplate="Probabilité: %{x}<br>Impact: %{y}<br>%{text}<extra></extra>",
+        colorscale=[[0, "#ecf0f1"], [0.3, "#d5f5e3"], [0.55, "#f9e79f"],
+                    [0.75, "#f5b041"], [1, "#c0392b"]],
+        showscale=False,
+    ))
+    # Annoter chaque cellule avec son score NRS et son nombre de nœuds
+    annotations = []
+    for impact in range(1, 6):
+        for lik in range(1, 6):
+            score = impact * lik
+            count = grid.loc[impact, lik]
+            level = "Critique" if score >= 15 else "Élevé" if score >= 10 else \
+                    "Modéré" if score >= 5 else "Faible"
+            txt = f"NRS={score}" + (f"<br>({count})" if count > 0 else "")
+            annotations.append(dict(x=lik, y=impact, text=txt, showarrow=False,
+                                     font=dict(size=10, color="#2c3e50")))
+    fig.update_layout(
+        title="Matrice de risque SPARTA (probabilité x impact, échelle NRS)",
+        xaxis=dict(title="Probabilité (1=faible, 5=élevée)", dtick=1, range=[0.5, 5.5]),
+        yaxis=dict(title="Impact (1=faible, 5=catastrophique)", dtick=1, range=[0.5, 5.5]),
+        annotations=annotations, height=500,
+    )
+    return fig
+
+
+def sparta_tactics_bar(sparta_df: pd.DataFrame) -> go.Figure:
+    """Nombre de vecteurs d'attaque par tactique SPARTA, coloré par niveau de risque dominant."""
+    df = sparta_df.copy()
+    order = ["Faible", "Modéré", "Élevé", "Critique"]
+    risk_colors = {"Faible": "#2ecc71", "Modéré": "#f1c40f", "Élevé": "#e67e22", "Critique": "#c0392b"}
+
+    fig = go.Figure()
+    for level in order:
+        subset = df[df["risk_level"] == level]
+        if subset.empty:
+            continue
+        counts = subset.groupby("sparta_tactic_name").size()
+        fig.add_trace(go.Bar(name=level, x=counts.index, y=counts.values,
+                              marker_color=risk_colors[level]))
+    fig.update_layout(
+        title="Vecteurs d'attaque par tactique SPARTA, par niveau de risque",
+        barmode="stack", yaxis_title="Nombre de vecteurs", height=400,
+    )
+    return fig

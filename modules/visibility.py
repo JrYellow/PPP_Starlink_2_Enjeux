@@ -57,7 +57,23 @@ KNOWN_OBSERVATORIES = {
     "mauna_kea": Observatory("Mauna Kea Observatory (Hawaii)", 19.8207, -155.4681, 4207),
     "paranal": Observatory("ESO Paranal Observatory (Chili)", -24.6272, -70.4039, 2635),
     "la_palma": Observatory("Observatorio del Roque de los Muchachos", 28.7606, -17.8850, 2396),
+    "dakar": Observatory("Dakar, Sénégal (Faculté des Sciences et Techniques, UCAD)", 14.6928, -17.4467, 24),
 }
+
+
+def custom_observatory(name: str, latitude_deg: float, longitude_deg: float,
+                        elevation_m: float = 0.0) -> Observatory:
+    """
+    Construit un observatoire personnalisé à partir de coordonnées saisies par
+    l'utilisateur (latitude/longitude/altitude), pour permettre l'analyse
+    depuis n'importe quel site -- pas seulement les observatoires de référence
+    prédéfinis ci-dessus.
+    """
+    if not (-90 <= latitude_deg <= 90):
+        raise ValueError(f"Latitude invalide : {latitude_deg} (doit être entre -90 et 90)")
+    if not (-180 <= longitude_deg <= 180):
+        raise ValueError(f"Longitude invalide : {longitude_deg} (doit être entre -180 et 180)")
+    return Observatory(name, latitude_deg, longitude_deg, elevation_m)
 
 
 def _phase_function(phase_angle_rad: float) -> float:

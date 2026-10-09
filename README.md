@@ -4,30 +4,62 @@ Projet Télécommunications — EC2LT — PPP Starlink 2 — Groupe 2
 
 Application Python locale (Streamlit) à 3 modules analysant l'impact de
 Starlink : environnement/orbital (calcul), stratégique/réglementaire/économique
-(dashboard), cybersécurité (modèle de menace).
+(dashboard), cybersécurité (modèle de menace structuré avec STRIDE + SPARTA).
+
+## Démarrage rapide (5 commandes)
+
+Testé avec **Python 3.11 et 3.12** sur Linux et macOS (Windows : adapter la
+commande d'activation du venv, voir ci-dessous).
+
+```bash
+git clone https://github.com/JrYellow/PPP_Starlink_2_Enjeux.git
+cd PPP_Starlink_2_Enjeux
+python3 -m venv venv && source venv/bin/activate   # Windows : venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+L'application s'ouvre automatiquement dans votre navigateur à l'adresse
+`http://localhost:8501`. Aucune clé API, aucun compte, aucune donnée sensible
+n'est nécessaire : tout fonctionne en local avec des données publiques.
 
 ## Statut du développement
 
-- **Module 1 — Environnement & Orbital** (Sprint 1)
-- **Module 2 — Stratégique / Réglementaire / Économique** (Sprint 2)
-- **Module 3 — Cybersécurité** (Sprint 3)
+- **Module 1 — Environnement & Orbital** (traînées lumineuses, débris, conjonctions)
+- **Module 2 — Stratégique / Réglementaire / Économique** (réglementation, revenus, géopolitique)
+- **Module 3 — Cybersécurité** (arbre d'attaque, STRIDE, référentiel SPARTA, cas Viasat KA-SAT)
 
 Les 3 modules du cahier des charges sont implémentés et intégrés dans une
 application Streamlit unique (`app.py`, 3 onglets).
 
-## Installation
+## Utilisation du Module 1 (Environnement & Orbital)
 
+1. Choisissez un **site d'observation** : un observatoire de référence (Mauna
+   Kea, Paranal, La Palma, **Dakar**) ou un **site personnalisé** (saisissez
+   latitude/longitude/altitude de n'importe quel lieu).
+2. Choisissez une date et une fenêtre d'analyse.
+3. Décochez "données d'exemple" pour utiliser le vrai catalogue Starlink
+   (nécessite un accès réseau à CelesTrak — voir la section Dépannage
+   ci-dessous si vous obtenez une erreur 403).
+4. Cliquez sur **Lancer la simulation**.
+
+## Dépannage
+
+**Erreur HTTP 403 sur CelesTrak** : CelesTrak limite les groupes
+`active`/`starlink` à un téléchargement par cycle de 2 heures. Si vous avez
+déjà testé récemment, soit attendez le prochain cycle, soit précaration le
+cache une fois pour toutes :
 ```bash
-python3 -m venv venv
-source venv/bin/activate        # Windows : venv\Scripts\activate
-pip install -r requirements.txt
+python -m modules.tle_fetcher --register-file <fichier_tle.tle> --group starlink
 ```
+Une fois ce cache enregistré, décochez "données d'exemple" dans l'application
+: elle utilisera ce cache sans repasser par le réseau.
 
-## Lancement
-
-```bash
-streamlit run app.py
-```
+**L'application est lente sur la détection de conjonctions** : si vous
+constatez un ralentissement important, vérifiez que `modules/conjunctions.py`
+utilise bien `SatrecArray` et `scipy.spatial.cKDTree` (voir section "Choix
+techniques" ci-dessous) — le catalogue complet Starlink (7000+ satellites)
+doit se traiter en moins d'une seconde par pas de temps.
 
 ## Structure du projet
 
@@ -46,9 +78,9 @@ starlink-impact/
 │   ├── economic.py          # Chargement/validation données économiques
 │   ├── geopolitics.py       # Chargement/validation constellations + événements
 │   ├── visualization2.py    # Graphiques Module 2 (matrice, éco, course, frise, KPIs)
-│   ├── threat_model.py      # Chargement/validation arbre d'attaque + STRIDE
+│   ├── threat_model.py      # Chargement/validation arbre d'attaque + STRIDE + SPARTA
 │   ├── case_study.py        # Chargement/validation chronologie Viasat KA-SAT
-│   └── visualization3.py    # Graphiques Module 3 (arbre, heatmap STRIDE, frise)
+│   └── visualization3.py    # Graphiques Module 3 (arbre, STRIDE, matrice de risque SPARTA, frise)
 ├── data/
 │   ├── cache/                # Cache local des TLE téléchargés (auto-généré)
 │   ├── samples/
@@ -67,11 +99,12 @@ starlink-impact/
 │   └── cyber/
 │       ├── attack_tree.csv      # Arbre d'attaque (19 nœuds, branche Viasat)
 │       ├── stride_matrix.csv    # Matrice STRIDE (18 entrées)
+│       ├── sparta_mapping.csv   # Référentiel SPARTA (14 vecteurs, score NRS, contrôles NIST)
 │       └── viasat_case_study.csv # Chronologie incident Viasat (9 événements, TTP MITRE)
 ├── tests/
 │   ├── test_orbital.py      # Module 1 : 11 tests (cas Mauna Kea)
 │   ├── test_module2.py      # Module 2 : 13 tests
-│   └── test_module3.py      # Module 3 : 16 tests
+│   └── test_module3.py      # Module 3 : 22 tests (dont 6 SPARTA)
 ├── assets/
 └── docs/                     # Documentation académique (PDF, diagrammes)
 ```
@@ -124,6 +157,14 @@ avec leurs rapports annuels officiels avant la soutenance).
   chronologie de l'incident de février 2022 (accès initial via VPN mal
   configuré → pivot vers le réseau de gestion → déploiement du wiper
   AcidRain), avec TTP MITRE ATT&CK et sources CISA/SentinelOne.
+- **Référentiel SPARTA** (`data/cyber/sparta_mapping.csv`) : les 14 vecteurs
+  d'attaque de l'arbre sont mappés sur les 9 tactiques officielles de SPARTA
+  (*Space Attack Research and Tactic Analysis*, Aerospace Corporation —
+  l'équivalent de MITRE ATT&CK pour le spatial), avec un score de risque NRS
+  (probabilité × impact, grille 5×5 : Faible/Modéré/Élevé/Critique) et les
+  contrôles de sécurité NIST SP 800-53 associés. Les 4 nœuds du chemin
+  d'attaque réel Viasat ressortent systématiquement en catégorie "Élevé"
+  (vérifié par un test automatisé dédié).
 
 ## Sources de données
 
@@ -138,7 +179,8 @@ avec leurs rapports annuels officiels avant la soutenance).
   constellations sur les observations astronomiques ESO.
 - Rapport IAU "Dark and Quiet Skies".
 - Cybersécurité : CISA/FBI AA22-076, analyses SentinelOne (AcidRain/AcidPour),
-  rapport d'intervention Viasat, MITRE ATT&CK.
+  rapport d'intervention Viasat, MITRE ATT&CK, référentiel SPARTA
+  (sparta.aerospace.org), NIST SP 800-53 (contrôles de sécurité).
 
 ## Tests
 
@@ -146,10 +188,10 @@ avec leurs rapports annuels officiels avant la soutenance).
 pytest tests/ -v
 ```
 
-**40 tests** couvrant les 3 modules : géométrie solaire, propagation SGP4,
-traînées, débris/conjonctions (Module 1) ; réglementaire, économique,
-géopolitique (Module 2) ; arbre d'attaque, STRIDE, étude de cas Viasat
-(Module 3).
+**46 tests** couvrant les 3 modules : géométrie solaire, propagation SGP4,
+traînées, débris/conjonctions (Module 1, 11 tests) ; réglementaire, économique,
+géopolitique (Module 2, 13 tests) ; arbre d'attaque, STRIDE, SPARTA, étude de
+cas Viasat (Module 3, 22 tests).
 
 ## Note sur les données d'exemple
 
@@ -158,7 +200,3 @@ valide, mais pas de vrais satellites) utilisés pour les tests automatisés et
 la démo hors-ligne. Pour une analyse réelle, décochez l'option "données
 d'exemple" dans l'application (nécessite un accès internet à CelesTrak).
 
-## Groupe 2 — EC2LT
-
-Junior ATIPO · Exode NGAMENEDE-OMOYEN · Tchedre TCHAPO · Francky Fara MENDY · Dieu Merci
-Geoffroy Wesley NAM YONA · Dieynaba BA · Taoufiki HAIROUNISSAOU
